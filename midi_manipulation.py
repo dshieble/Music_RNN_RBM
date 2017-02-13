@@ -17,8 +17,8 @@ def write_song(path, song):
 def get_song(path):
     #Load the song and reshape it to place multiple timesteps next to each other
     song = np.array(midiToNoteStateMatrix(path))
-    song = song[:np.floor(song.shape[0]/num_timesteps)*num_timesteps]
-    song = np.reshape(song, [song.shape[0]/num_timesteps, song.shape[1]*num_timesteps])
+    song = song[:np.int(np.floor(song.shape[0]/num_timesteps)*num_timesteps)]
+    song = np.reshape(song, [np.int(song.shape[0]/num_timesteps), np.int(song.shape[1]*num_timesteps)])
     return song
 
 def get_songs(path):
@@ -30,7 +30,7 @@ def get_songs(path):
             if np.array(song).shape[0] > 50/num_timesteps:
                 songs.append(song)
         except Exception as e:
-            print f, e            
+            print(f, e)
     return songs
 
 def midiToNoteStateMatrix(midifile, squash=True, span=span):

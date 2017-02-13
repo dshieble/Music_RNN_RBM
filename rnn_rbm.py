@@ -3,6 +3,7 @@ import numpy as np
 import glob
 
 from tensorflow.python.ops import control_flow_ops
+from tensorflow.python.framework import tensor_shape
 from tqdm import tqdm
 
 import RBM
@@ -89,11 +90,21 @@ def rnnrbm():
 
         """
         Uarr = tf.scan(rnn_recurrence, x, initializer=u0)
-        U = Uarr[np.floor(prime_length/midi_manipulation.num_timesteps), :, :]
-        [_, _, _, _, _, music] = control_flow_ops.While(lambda count, num_iter, *args: count < num_iter,
-                                                         generate_recurrence, [tf.constant(1, tf.int32), tf.constant(num), U,
-                                                         tf.zeros([1, n_visible], tf.float32), x, 
-                                                         tf.zeros([1, n_visible],  tf.float32)])
+        U = Uarr[np.int(prime_length/midi_manipulation.num_timesteps), :, :]
+
+        count0 = tf.constant(1, tf.int32)
+        k0 = tf.constant(num)
+        [_, _, _, _, _, music] = control_flow_ops.while_loop(cond=lambda count, num_iter, *args: count < num_iter,
+                                                             body=generate_recurrence,
+                                                             loop_vars=[count0, k0, U,
+                                                                        tf.zeros([1, n_visible], tf.float32),
+                                                                        x,
+                                                                        tf.zeros([1, n_visible],  tf.float32)],
+                                                             shape_invariants=[
+                                                                 count0.get_shape(), k0.get_shape(), U.get_shape(),
+                                                                 tensor_shape.TensorShape([1, n_visible]),
+                                                                 x.get_shape(),
+                                                                 tensor_shape.TensorShape([None, n_visible])])
         return music
 
     #Reshape our bias matrices to be the same size as the batch.
