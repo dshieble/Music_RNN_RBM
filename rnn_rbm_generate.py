@@ -29,10 +29,10 @@ def main(saved_weights_path):
 
     saver = tf.train.Saver(tvars) #We use this saver object to restore the weights of the model
 
-    song_primer = midi_manipulation.get_song(primer_song) 
+    song_primer = midi_manipulation.get_song(primer_song)
 
     with tf.Session() as sess:
-        init = tf.initialize_all_variables()
+        init = tf.global_variables_initializer()
         sess.run(init)
         saver.restore(sess, saved_weights_path) #load the saved weights of the network
         # #We generate num songs
@@ -43,4 +43,4 @@ def main(saved_weights_path):
 
 if __name__ == "__main__":
     main(sys.argv[1])
-    
+

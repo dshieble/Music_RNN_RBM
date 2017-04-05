@@ -27,27 +27,27 @@ def gibbs_sample(x, W, bv, bh, k):
 
     #Run gibbs steps for k iterations
     ct = tf.constant(0) #counter
-    [_, _, x_sample] = control_flow_ops.While(lambda count, num_iter, *args: count < num_iter,
-                                         gibbs_step, [ct, tf.constant(k), x], 1, False)
+    [_, _, x_sample] = control_flow_ops.while_loop(lambda count, num_iter, *args: count < num_iter,
+                                                     gibbs_step, [ct, tf.constant(k), x])
     #We need this in order to stop tensorflow from propagating gradients back through the gibbs step
     x_sample = tf.stop_gradient(x_sample)
     return x_sample
 
-def get_free_energy_cost(x, W, bv, bh, k):   
-    #We use this function in training to get the free energy cost of the RBM. We can pass this cost directly into TensorFlow's optimizers 
+def get_free_energy_cost(x, W, bv, bh, k):
+    #We use this function in training to get the free energy cost of the RBM. We can pass this cost directly into TensorFlow's optimizers
     #First, draw a sample from the RBM
     x_sample   = gibbs_sample(x, W, bv, bh, k)
 
     def F(xx):
-        #The function computes the free energy of a visible vector. 
+        #The function computes the free energy of a visible vector.
         return -tf.reduce_sum(tf.log(1 + tf.exp(tf.matmul(xx, W) + bh)), 1) - tf.matmul(xx, tf.transpose(bv))
 
     #The cost is based on the difference in free energy between x and xsample
-    cost = tf.reduce_mean(tf.sub(F(x), F(x_sample)))
+    cost = tf.reduce_mean(tf.subtract(F(x), F(x_sample)))
     return cost
 
 def get_cd_update(x, W, bv, bh, k, lr):
-    #This is the contrastive divergence algorithm. 
+    #This is the contrastive divergence algorithm.
 
     #First, we get the samples of x and h from the probability distribution
     #The sample of x
@@ -60,9 +60,9 @@ def get_cd_update(x, W, bv, bh, k, lr):
     #Next, we update the values of W, bh, and bv, based on the difference between the samples that we drew and the original values
     lr = tf.constant(lr, tf.float32) #The CD learning rate
     size_bt = tf.cast(tf.shape(x)[0], tf.float32) #The batch size
-    W_  = tf.mul(lr/size_bt, tf.sub(tf.matmul(tf.transpose(x), h), tf.matmul(tf.transpose(x_sample), h_sample)))
-    bv_ = tf.mul(lr/size_bt, tf.reduce_sum(tf.sub(x, x_sample), 0, True))
-    bh_ = tf.mul(lr/size_bt, tf.reduce_sum(tf.sub(h, h_sample), 0, True))
+    W_  = tf.multiply(lr/size_bt, tf.subtract(tf.matmul(tf.transpose(x), h), tf.matmul(tf.transpose(x_sample), h_sample)))
+    bv_ = tf.multiply(lr/size_bt, tf.reduce_sum(tf.subtract(x, x_sample), 0, True))
+    bh_ = tf.multiply(lr/size_bt, tf.reduce_sum(tf.subtract(h, h_sample), 0, True))
 
     #When we do sess.run(updt), TensorFlow will run all 3 update steps
     updt = [W.assign_add(W_), bv.assign_add(bv_), bh.assign_add(bh_)]

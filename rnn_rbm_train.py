@@ -35,7 +35,7 @@ def main(num_epochs):
 
     saver = tf.train.Saver(tvars) #We use this saver object to restore the weights of the model and save the weights every few epochs
     with tf.Session() as sess:
-        init = tf.initialize_all_variables()
+        init = tf.global_variables_initializer()
         sess.run(init) 
         saver.restore(sess, saved_weights_path) #Here we load the initial weights of the model that we created with weight_initializations.py
 
