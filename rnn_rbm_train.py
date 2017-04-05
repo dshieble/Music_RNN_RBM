@@ -4,7 +4,10 @@ import tensorflow as tf
 import numpy as np
 from tqdm import tqdm
 import rnn_rbm
-import midi_manipulation 
+import midi_manipulation
+import os
+import sys
+from six.moves import cPickle
 
 """
     This file contains the code for training the RNN-RBM by using the data in the Pop_Music_Midi directory
@@ -12,7 +15,7 @@ import midi_manipulation
 
 
 batch_size = 100 #The number of trianing examples to feed into the rnn_rbm at a time
-epochs_to_save = 5 #The number of epochs to run between saving each checkpoint
+epochs_to_save = 100 #The number of epochs to run between saving each checkpoint
 saved_weights_path = "parameter_checkpoints/initialized.ckpt" #The path to the initialized weights checkpoint file
 checkpoint_path = 'parameter_checkpoints'
 
@@ -22,23 +25,35 @@ def main(num_epochs):
 
     #The trainable variables include the weights and biases of the RNN and the RBM, as well as the initial state of the RNN
     tvars = [W, Wuh, Wuv, Wvu, Wuu, bh, bv, bu, u0]
-    # opt_func = tf.train.AdamOptimizer(learning_rate=lr) 
+    # opt_func = tf.train.AdamOptimizer(learning_rate=lr)
     # grads, _ = tf.clip_by_global_norm(tf.gradients(cost, tvars), 1)
-    # updt = opt_func.apply_gradients(zip(grads, tvars)) 
-    
+    # updt = opt_func.apply_gradients(zip(grads, tvars))
+
     #The learning rate of the  optimizer is a parameter that we set on a schedule during training
     opt_func = tf.train.GradientDescentOptimizer(learning_rate=lr)
     gvs = opt_func.compute_gradients(cost, tvars)
     gvs = [(tf.clip_by_value(grad, -10., 10.), var) for grad, var in gvs] #We use gradient clipping to prevent gradients from blowing up during training
     updt = opt_func.apply_gradients(gvs)#The update step involves applying the clipped gradients to the model parameters
 
-    songs = midi_manipulation.get_songs('Pop_Music_Midi') #Load the songs 
+    songs = midi_manipulation.get_songs('Pop_Music_Midi') #Load the songs
 
     saver = tf.train.Saver(tvars) #We use this saver object to restore the weights of the model and save the weights every few epochs
+
+    ckpt = tf.train.get_checkpoint_state(checkpoint_path)
+    assert ckpt, "No checkpoint found"
+    assert ckpt.model_checkpoint_path, "No model path found in checkpoint"
+
     with tf.Session() as sess:
         init = tf.global_variables_initializer()
-        sess.run(init) 
-        saver.restore(sess, saved_weights_path) #Here we load the initial weights of the model that we created with weight_initializations.py
+        sess.run(init)
+        saver.restore(sess, ckpt.model_checkpoint_path)
+        #saver.restore(sess, saved_weights_path) #Here we load the initial weights of the model that we created with weight_initializations.py
+
+        iterations = 0
+        iter_file = os.path.join(checkpoint_path, 'iterations')
+        if os.path.isfile(iter_file):
+            with open(iter_file,'rb') as f:
+                iterations = cPickle.load(f)
 
         #We run through all of the songs n_epoch times
         print("starting")
@@ -47,15 +62,28 @@ def main(num_epochs):
             start = time.time()
             for s_ind, song in enumerate(songs):
                 for i in range(1, len(song), batch_size):
-                    tr_x = song[i:i + batch_size] 
+                    tr_x = song[i:i + batch_size]
                     alpha = min(0.01, 0.1/float(i)) #We decrease the learning rate according to a schedule.
-                    _, C = sess.run([updt, cost], feed_dict={x: tr_x, lr: alpha}) 
-                    costs.append(C) 
-            #Print the progress at epoch
-            print("epoch: {} cost: {} time: {}".format(epoch, np.mean(costs), time.time()-start))
-            #Here we save the weights of the model every few epochs
-            if (epoch + 1) % epochs_to_save == 0: 
-                saver.save(sess, "parameter_checkpoints/epoch_{}.ckpt".format(epoch))
+                    _, C = sess.run([updt, cost], feed_dict={x: tr_x, lr: alpha})
+                    costs.append(C)
+
+                    if (iterations + 1) % epochs_to_save == 0:
+                        checkpoint = os.path.join(checkpoint_path, 'model.ckpt')
+                        saver.save(sess, checkpoint, global_step = iterations)
+                        with open(iter_file, 'wb') as f:
+                            cPickle.dump(iterations, f)
+                        sys.stdout.write('\n')
+                        print('save model at:', iterations)
+
+                    #Print the progress at epoch
+                    info = "epoch: {} iterations: {} cost: {} time: {}".format(epoch, iterations, np.mean(costs), time.time() - start)
+                    sys.stdout.write('\r')
+                    sys.stdout.write(info)
+                    sys.stdout.flush()
+
+                    iterations += 1
+
+            sys.stdout.write('\n')
 
 if __name__ == "__main__":
     main(int(sys.argv[1]))
