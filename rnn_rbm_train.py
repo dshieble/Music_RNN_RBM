@@ -20,6 +20,11 @@ saved_weights_path = "parameter_checkpoints/initialized.ckpt" #The path to the i
 checkpoint_path = 'parameter_checkpoints'
 
 def main(num_epochs):
+    # check env
+    ckpt = tf.train.get_checkpoint_state(checkpoint_path)
+    assert ckpt, "No checkpoint found"
+    assert ckpt.model_checkpoint_path, "No model path found in checkpoint"
+
     #First, we build the model and get pointers to the model parameters
     x, cost, generate, W, bh, bv, x, lr, Wuh, Wuv, Wvu, Wuu, bu, u0 = rnn_rbm.rnnrbm()
 
@@ -38,10 +43,6 @@ def main(num_epochs):
     songs = midi_manipulation.get_songs('Pop_Music_Midi') #Load the songs
 
     saver = tf.train.Saver(tvars) #We use this saver object to restore the weights of the model and save the weights every few epochs
-
-    ckpt = tf.train.get_checkpoint_state(checkpoint_path)
-    assert ckpt, "No checkpoint found"
-    assert ckpt.model_checkpoint_path, "No model path found in checkpoint"
 
     with tf.Session() as sess:
         init = tf.global_variables_initializer()
