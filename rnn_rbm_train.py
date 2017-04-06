@@ -50,7 +50,7 @@ def main(num_epochs):
         saver.restore(sess, ckpt.model_checkpoint_path)
         #saver.restore(sess, saved_weights_path) #Here we load the initial weights of the model that we created with weight_initializations.py
 
-        iterations = 0
+        iterations = 1
         iter_file = os.path.join(checkpoint_path, 'iterations')
         if os.path.isfile(iter_file):
             with open(iter_file,'rb') as f:
@@ -68,19 +68,20 @@ def main(num_epochs):
                     _, C = sess.run([updt, cost], feed_dict={x: tr_x, lr: alpha})
                     costs.append(C)
 
-                    if (iterations + 1) % epochs_to_save == 0:
+                    #Print the progress at epoch
+                    info = "epoch: {} iterations: {} cost: {:.4f} time: {:.4f}".format(epoch, iterations, np.mean(costs), time.time() - start)
+                    sys.stdout.write('\r')
+                    sys.stdout.write(info)
+                    sys.stdout.flush()
+
+                    if iterations % epochs_to_save == 0:
+                        costs = []
                         checkpoint = os.path.join(checkpoint_path, 'model.ckpt')
                         saver.save(sess, checkpoint, global_step = iterations)
                         with open(iter_file, 'wb') as f:
                             cPickle.dump(iterations, f)
                         sys.stdout.write('\n')
                         print('save model at:', iterations)
-
-                    #Print the progress at epoch
-                    info = "epoch: {} iterations: {} cost: {} time: {}".format(epoch, iterations, np.mean(costs), time.time() - start)
-                    sys.stdout.write('\r')
-                    sys.stdout.write(info)
-                    sys.stdout.flush()
 
                     iterations += 1
 
