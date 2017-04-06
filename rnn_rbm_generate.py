@@ -34,7 +34,13 @@ def main(saved_weights_path):
     with tf.Session() as sess:
         init = tf.global_variables_initializer()
         sess.run(init)
-        saver.restore(sess, saved_weights_path) #load the saved weights of the network
+
+        if os.path.isfile(saved_weights_path):
+            saver.restore(sess, saved_weights_path) #load the saved weights of the network
+        else:
+            ckpt = tf.train.get_checkpoint_state(saved_weights_path)
+            saver.restore(sess, ckpt.model_checkpoint_path)
+
         # #We generate num songs
         for i in tqdm(range(num)):
             generated_music = sess.run(generate(300), feed_dict={x: song_primer}) #Prime the network with song primer and generate an original song
