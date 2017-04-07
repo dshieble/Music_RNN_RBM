@@ -1,2 +1,14 @@
 *.pyc
-
+*.ckpt.data*
+*.ckpt.index
+*.ckpt.meta
+*.ckpt-*
+.DS_Store
+*~
+*.swp
+*.swo
+*.dSYM
+iterations
+report.txt
+music_outputs
+checkpoint

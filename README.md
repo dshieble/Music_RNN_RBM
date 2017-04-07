@@ -1,6 +1,11 @@
-#Music_RNN_RBM
+# Music_RNN_RBM
 
 This repository contains code for generating long sequences of polyphonic music by using an RNN_RBM in TensorFlow. 
+
+# environment
+
+- tensorflow1.0
+- python3 >= 3.5
 
 ### TLDR:
 You can generate music by cloning the directory and running:

@@ -1,6 +1,6 @@
 import midi
 import numpy as np
-import glob  
+import glob
 from tqdm import tqdm
 
 lowerBound = 24 #The lowest note
@@ -17,8 +17,8 @@ def write_song(path, song):
 def get_song(path):
     #Load the song and reshape it to place multiple timesteps next to each other
     song = np.array(midiToNoteStateMatrix(path))
-    song = song[:np.floor(song.shape[0]/num_timesteps)*num_timesteps]
-    song = np.reshape(song, [song.shape[0]/num_timesteps, song.shape[1]*num_timesteps])
+    song = song[:int(np.floor(song.shape[0] / num_timesteps) * num_timesteps)]
+    song = np.reshape(song, [int(song.shape[0] / num_timesteps), int(song.shape[1] * num_timesteps)])
     return song
 
 def get_songs(path):
@@ -30,7 +30,7 @@ def get_songs(path):
             if np.array(song).shape[0] > 50/num_timesteps:
                 songs.append(song)
         except Exception as e:
-            print f, e            
+            print(f, e)
     return songs
 
 def midiToNoteStateMatrix(midifile, squash=True, span=span):
@@ -103,13 +103,13 @@ def noteStateMatrixToMidi(statematrix, name="example", span=span):
     pattern = midi.Pattern()
     track = midi.Track()
     pattern.append(track)
-    
+
     span = upperBound-lowerBound
     tickscale = 55
-    
+
     lastcmdtime = 0
     prevstate = [[0,0] for x in range(span)]
-    for time, state in enumerate(statematrix + [prevstate[:]]):  
+    for time, state in enumerate(statematrix + [prevstate[:]]):
         offNotes = []
         onNotes = []
         for i in range(span):
@@ -129,9 +129,9 @@ def noteStateMatrixToMidi(statematrix, name="example", span=span):
         for note in onNotes:
             track.append(midi.NoteOnEvent(tick=(time-lastcmdtime)*tickscale, velocity=40, pitch=note+lowerBound))
             lastcmdtime = time
-            
+
         prevstate = state
-    
+
     eot = midi.EndOfTrackEvent(tick=1)
     track.append(eot)
 
