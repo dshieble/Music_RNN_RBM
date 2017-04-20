@@ -1,4 +1,7 @@
-#Music_RNN_RBM
+Note: this is described in detail here: http://danshiebler.com/2016-08-17-musical-tensorflow-part-two-the-rnn-rbm/
+
+
+# Music_RNN_RBM
 
 This repository contains code for generating long sequences of polyphonic music by using an RNN_RBM in TensorFlow. 
 
