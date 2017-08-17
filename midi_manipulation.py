@@ -17,7 +17,7 @@ def write_song(path, song):
 def get_song(path):
     #Load the song and reshape it to place multiple timesteps next to each other
     song = np.array(midiToNoteStateMatrix(path))
-    song = song[:np.floor(song.shape[0]/num_timesteps)*num_timesteps]
+    song = song[:int(np.floor(song.shape[0]/num_timesteps)*num_timesteps)]
     song = np.reshape(song, [song.shape[0]/num_timesteps, song.shape[1]*num_timesteps])
     return song
 
